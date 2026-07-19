@@ -42,7 +42,7 @@
 (set-face-attribute 'default nil :family "JetBrains Mono" :height 130)
 (show-paren-mode 1)
 (column-number-mode 1)
-(global-display-line-numbers-mode 1)
+(add-hook 'prog-mode-hook #'display-line-numbers-mode) ; numbers only in code
 (delete-selection-mode 1)                ; typing replaces the active region
 (when (fboundp 'pixel-scroll-precision-mode)
   (pixel-scroll-precision-mode 1))       ; smooth trackpad/wheel scrolling
@@ -65,6 +65,29 @@
 (save-place-mode 1)
 (savehist-mode 1)
 (global-auto-revert-mode 1)
+
+;;; ---------- Editing quality-of-life ----------
+(electric-pair-mode 1)                    ; auto-close brackets/quotes
+                                          ; (paredit still owns the lisp modes)
+(global-so-long-mode 1)                   ; stay responsive in huge/minified files
+(windmove-default-keybindings)            ; S-<arrow> moves between windows
+(setq-default indent-tabs-mode nil        ; indent with spaces
+              tab-width 4)
+(setq uniquify-buffer-name-style 'forward ; foo/x.el & bar/x.el, not x.el<2>
+      sentence-end-double-space nil
+      require-final-newline t
+      isearch-lazy-count t                ; "3/17" match counter in isearch
+      echo-keystrokes 0.02
+      scroll-margin 3                     ; keep a few lines of context
+      scroll-conservatively 101           ; scroll one line, don't recenter
+      scroll-preserve-screen-position t)
+;; Create missing parent directories when saving a new file.
+(add-hook 'before-save-hook
+          (lambda ()
+            (when buffer-file-name
+              (let ((dir (file-name-directory buffer-file-name)))
+                (unless (file-directory-p dir)
+                  (make-directory dir t))))))
 
 ;;; ---------- Minibuffer completion ----------
 (use-package vertico
@@ -96,10 +119,24 @@
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 ;;; ---------- Completion-at-point ----------
-(use-package company
-  :init (global-company-mode 1)
-  :config (setq company-idle-delay 0.2
-                company-minimum-prefix-length 2))
+;; Corfu: a lightweight in-buffer popup that reuses orderless filtering.
+(use-package corfu
+  :init (global-corfu-mode 1)
+  :config
+  (setq corfu-auto t                     ; pop up automatically
+        corfu-auto-delay 0.2
+        corfu-auto-prefix 2
+        corfu-cycle t                     ; wrap around the candidate list
+        corfu-quit-no-match 'separator)
+  :bind (:map corfu-map
+              ("SPC" . corfu-insert-separator))) ; type a space to keep filtering
+
+;; Cape: extra completion-at-point sources (files, words, keywords).
+(use-package cape
+  :init
+  (add-hook 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-keyword))
 
 ;;; ---------- Project tree ----------
 (use-package treemacs
@@ -136,10 +173,20 @@
         cider-show-error-buffer 'only-in-repl
         nrepl-hide-special-buffers t))
 
-;;; ---------- Java ----------
-;; Built-in java-mode; eglot (also built in) starts jdtls when available.
-(with-eval-after-load 'eglot
-  (add-hook 'java-mode-hook #'eglot-ensure))
+;;; ---------- LSP (eglot, built-in) ----------
+;; Requires the language servers on PATH:
+;;   Java    -> jdtls            (brew install jdtls)
+;;   Clojure -> clojure-lsp      (brew install clojure-lsp/brew/clojure-lsp)
+;; For Clojure this complements CIDER: CIDER drives the live REPL, while
+;; clojure-lsp provides static navigation, references, and completion.
+(use-package eglot
+  :ensure nil                             ; ships with Emacs
+  :hook ((java-mode clojure-mode clojurescript-mode) . eglot-ensure)
+  :config
+  (setq eglot-events-buffer-config '(:size 0 :format short) ; don't log traffic
+        eglot-autoshutdown t              ; stop the server with its last buffer
+        eglot-extend-to-xref t
+        eldoc-echo-area-use-multiline-p nil)) ; keep hover docs to one line
 (setq c-basic-offset 4)
 
 ;;; ---------- Shell / zsh ----------
