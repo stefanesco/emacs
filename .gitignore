@@ -1,0 +1,27 @@
+# Installed packages (managed by package.el / use-package :ensure)
+/elpa/
+/eln-cache/
+/.cache/
+/transient/
+
+# Auto-save, lock, and backup files
+*~
+\#*\#
+.\#*
+/auto-save-list/
+*.bak
+*.bak-*
+
+# Generated / machine-local state
+/recentf
+/history
+/places
+/savehist
+/network-security.data
+/tramp
+/.org-id-locations
+/url/
+/request/
+
+# Native/byte compilation artifacts
+*.elc
