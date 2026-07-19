@@ -1,0 +1,30 @@
+# Changelog
+
+<!-- Entries are one line per item and section headings repeat for every release,
+     so the line-length and duplicate-heading rules don't fit this file. -->
+<!-- markdownlint-disable MD013 MD024 -->
+
+## master (unreleased)
+
+## 2.0.0 (2026-07-15)
+
+### New features
+
+- Transient menus everywhere:
+  - [#4048](https://github.com/clojure-emacs/cider/pull/4048): Each command group now opens a transient menu instead of a bare prefix keymap (`cider-eval-menu` at `C-c C-v`, `cider-doc-menu` at `C-c C-d`, and likewise for test, ns, insert, macroexpand, profile, trace and references), plus a top-level `cider-menu` dispatch; existing keybindings are preserved.
+  - [#4061](https://github.com/clojure-emacs/cider/pull/4061): The jack-in/connect keybindings are a transient menu too (`cider-start-menu`, `C-c C-x`), with flags for aliases (`-a`), the ClojureScript REPL type (`-l`) and editing the command before running (`-e`) ([#3317](https://github.com/clojure-emacs/cider/issues/3317)).
+  - Add a transient menu to the debugger (`cider-debug-menu`, `?` during a debug session) - its single-key commands are proper named commands now (e.g. `cider-debug-next`), so `M-x` works too - and to the inspector (`cider-inspector-menu`, `m`).
+  - Add per-invocation flags to several menus: the printer (`--print-fn=`) in the pretty-print menu ([#4065](https://github.com/clojure-emacs/cider/pull/4065)), test selectors (`--include=`/`--exclude=`) in the test menu ([#4063](https://github.com/clojure-emacs/cider/pull/4063)), refresh modes (`--all`/`--clear`/`--inhibit-fns`) in the ns menu and expansion display (`--ns=`/`--meta`) in the macroexpand menu ([#4062](https://github.com/clojure-emacs/cider/pull/4062)).
+- Rich content in evaluation results:
+  - [#2476](https://github.com/clojure-emacs/cider/issues/2476): Interactive evaluations now honor content types too: a result carrying rich content (e.g. an image) renders per the new `cider-eval-rich-content-destination` - `inline` (the default, in the result overlay at point), `repl`, `popup` or `nil` (plain values, the previous behavior).
+  - Render fetched `text/html` content as formatted text (via `shr`), and make an external-content result's URL a clickable link; remote images inside that HTML are never fetched, so rendering a result never makes a network request on its own.
+- New code-exploration commands under `C-c C-w`, presented as expandable trees:
+  - [#3995](https://github.com/clojure-emacs/cider/pull/3995): `cider-who-calls` (`c`) and `cider-who-is-called` (`d`), SLIME-style browsers for a function's callers and callees.
+  - [#3997](https://github.com/clojure-emacs/cider/pull/3997), [#3998](https://github.com/clojure-emacs/cider/pull/3998), [#4000](https://github.com/clojure-emacs/cider/pull/4000), [#4001](https://github.com/clojure-emacs/cider/pull/4001): `cider-who-implements` (`i`), browsing a protocol's implementing types (inline `defrecord`/`deftype` included) or a multimethod's dispatch values, with jumps to each implementation's source.
+  - [#3999](https://github.com/clojure-emacs/cider/pull/3999): `cider-type-protocols` (`t`), listing the protocols a type implements, and `cider-protocols-with-method` (`p`), listing the protocols that declare a given method.
+  - [#3996](https://github.com/clojure-emacs/cider/pull/3996): `cider-who-macroexpands` (`m`), finding a macro's use sites by searching the project's source.
+- [#3994](https://github.com/clojure-emacs/cider/pull/3994): `xref-find-references` (`M-?`) now finds references by searching the project's source files, covering code that hasn't been loaded into the REPL yet (configurable via `cider-xref-references-mode`).
+- Tracing and enlighten:
+  - [#3990](https://github.com/clojure-emacs/cider/pull/3990), [#3992](https://github.com/clojure-emacs/cider/pull/3992), [#3993](https://github.com/clojure-emacs/cider/pull/3993): Add `cider-trace`, a dedicated buffer that streams the calls and return values of traced functions live (instead of interleaving them into the REPL), with foldable calls, `n`/`p` navigation and jump-to-definition.
+...
+...
