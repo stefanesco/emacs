@@ -22,6 +22,10 @@
 /.org-id-locations
 /url/
 /request/
+/cider-history
+/package-quickstart.el
+/package-quickstart.elc
+/agent/
 
 # Native/byte compilation artifacts
 *.elc
