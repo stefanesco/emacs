@@ -387,20 +387,17 @@
   :commands (agent-shell
              agent-shell-anthropic-start-claude-code
              agent-shell-qwen-start
+             agent-shell-resume-session
              agent-shell-toggle)
   :config
   ;; --- Authentication -------------------------------------------------------
-  ;; Prefer subscription login over putting a key anywhere near this file.
+  ;; Default to subscription login. Switch billing at runtime without losing
+  ;; the conversation via the toggles in section 17c (C-c c s / C-c c c):
+  ;; they flip this variable and resume the persisted session under the new
+  ;; credential. Console keys live in auth-source, never inline:
+  ;;   ~/.authinfo  ->  machine api.anthropic.com login apikey password sk-ant-...
   (setq agent-shell-anthropic-authentication
         (agent-shell-anthropic-make-authentication :login t))
-
-  ;; If you ever need an API key, pull it from auth-source, never inline:
-  ;;   ~/.authinfo.gpg  ->  machine api.anthropic.com login apikey password sk-...
-  ;; (setq agent-shell-anthropic-authentication
-  ;;       (agent-shell-anthropic-make-authentication
-  ;;        :api-key (lambda ()
-  ;;                   (auth-source-pick-first-password
-  ;;                    :host "api.anthropic.com" :user "apikey"))))
 
   ;; --- Environment ----------------------------------------------------------
   ;; The agent process gets a MINIMAL env by default -- it would not see the
@@ -415,7 +412,10 @@
                                      (side . right) (window-width . 0.4))
         agent-shell-tool-use-expand-by-default t      ; SEE what it wants to run
         agent-shell-thought-process-expand-by-default nil
-        agent-shell-show-usage-at-turn-end t)         ; token cost visibility
+        agent-shell-show-usage-at-turn-end t          ; token cost visibility
+        ;; When resuming (e.g. after a billing switch), replay the whole
+        ;; conversation so context comes back. 'last / 'first-last are lighter.
+        agent-shell-session-restore-verbosity 'full)
 
   ;; --- OpenRouter via the Qwen Code ACP agent -------------------------------
   ;; OpenRouter is OpenAI-compatible, so we drive it through Qwen Code.
@@ -447,11 +447,51 @@
   ;;       agent-shell-path-resolver-function
   ;;       #'agent-shell-devcontainer-resolve-path)
 
-  :bind (("C-c a" . agent-shell)
-         ("C-c A" . agent-shell-toggle)
+  :bind (("C-c a"   . agent-shell)
+         ("C-c A"   . agent-shell-toggle)
+         ("C-c c s" . my/claude-use-subscription)  ; billing -> Pro/Max login
+         ("C-c c c" . my/claude-use-console)       ; billing -> console API key
          :map agent-shell-mode-map
          ;; RET submits by default; swap if you prefer composing multi-line.
          ("C-c C-k" . agent-shell-interrupt)))
+
+;;; ---------------------------------------------------------------------------
+;;; 17c. Switch Claude Code billing (subscription <-> console) mid-conversation
+;;; ---------------------------------------------------------------------------
+;; Auth is bound to the `claude' subprocess at launch, so billing cannot be
+;; hot-swapped on a live agent. But the conversation is persisted to disk by
+;; Claude Code independently of the credential, so each toggle just re-points
+;; the auth and resumes a stored session under the new billing. With
+;; `agent-shell-session-restore-verbosity' set to `full' (above), the prior
+;; conversation is replayed. Kill the rate-limited buffer (C-x k) when done.
+(defun my/claude--resume-with-auth (auth label)
+  "Set Claude AUTH, announce LABEL, then resume a persisted session."
+  (require 'agent-shell)
+  (setq agent-shell-anthropic-authentication auth)
+  (message "Claude billing -> %s. Pick the session to resume..." label)
+  (call-interactively #'agent-shell-resume-session))
+
+(defun my/claude-use-subscription ()
+  "Switch Claude Code to Pro/Max subscription login and resume a session."
+  (interactive)
+  (my/claude--resume-with-auth
+   (agent-shell-anthropic-make-authentication :login t)
+   "subscription (Pro/Max login)"))
+
+(defun my/claude-use-console ()
+  "Switch Claude Code to the console API key (metered) and resume a session.
+Reads the key from auth-source; errors early if it is not configured."
+  (interactive)
+  (unless (auth-source-pick-first-password
+           :host "api.anthropic.com" :user "apikey")
+    (user-error
+     "No console key found: add to ~/.authinfo -> machine api.anthropic.com login apikey password sk-ant-..."))
+  (my/claude--resume-with-auth
+   (agent-shell-anthropic-make-authentication
+    :api-key (lambda ()
+               (auth-source-pick-first-password
+                :host "api.anthropic.com" :user "apikey")))
+   "console API key (metered)"))
 
 ;;; ---------------------------------------------------------------------------
 ;;; 17b. Switch OpenRouter models without restarting Emacs
