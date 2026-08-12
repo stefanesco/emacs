@@ -466,7 +466,6 @@
 ;; conversation is replayed. Kill the rate-limited buffer (C-x k) when done.
 (defun my/claude--resume-with-auth (auth label)
   "Set Claude AUTH, announce LABEL, then resume a persisted session."
-  (require 'agent-shell)
   (setq agent-shell-anthropic-authentication auth)
   (message "Claude billing -> %s. Pick the session to resume..." label)
   (call-interactively #'agent-shell-resume-session))
@@ -474,6 +473,7 @@
 (defun my/claude-use-subscription ()
   "Switch Claude Code to Pro/Max subscription login and resume a session."
   (interactive)
+  (require 'agent-shell)   ; load BEFORE building the auth object below
   (my/claude--resume-with-auth
    (agent-shell-anthropic-make-authentication :login t)
    "subscription (Pro/Max login)"))
@@ -482,6 +482,7 @@
   "Switch Claude Code to the console API key (metered) and resume a session.
 Reads the key from auth-source; errors early if it is not configured."
   (interactive)
+  (require 'agent-shell)   ; load BEFORE building the auth object below
   (unless (auth-source-pick-first-password
            :host "api.anthropic.com" :user "apikey")
     (user-error
