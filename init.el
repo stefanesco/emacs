@@ -413,8 +413,12 @@
         agent-shell-tool-use-expand-by-default t      ; SEE what it wants to run
         agent-shell-thought-process-expand-by-default nil
         agent-shell-show-usage-at-turn-end t          ; token cost visibility
-        ;; When resuming (e.g. after a billing switch), replay the whole
-        ;; conversation so context comes back. 'last / 'first-last are lighter.
+        ;; On start, present a MENU of prior sessions (+ "new") instead of
+        ;; demanding a session ID. This is what makes the billing toggles
+        ;; below pick a session from a list.
+        agent-shell-session-strategy 'prompt
+        ;; When resuming, replay the whole conversation so context comes
+        ;; back. 'last / 'first-last are lighter.
         agent-shell-session-restore-verbosity 'full)
 
   ;; --- OpenRouter via the Qwen Code ACP agent -------------------------------
@@ -465,10 +469,14 @@
 ;; `agent-shell-session-restore-verbosity' set to `full' (above), the prior
 ;; conversation is replayed. Kill the rate-limited buffer (C-x k) when done.
 (defun my/claude--resume-with-auth (auth label)
-  "Set Claude AUTH, announce LABEL, then resume a persisted session."
+  "Set Claude AUTH, announce LABEL, then start Claude with a session menu.
+With `agent-shell-session-strategy' set to `prompt' (above), starting the
+shell lists your prior sessions to pick from -- no session ID needed.
+Choose your previous conversation to resume it under the new billing, or
+pick \"new\" to start fresh."
   (setq agent-shell-anthropic-authentication auth)
-  (message "Claude billing -> %s. Pick the session to resume..." label)
-  (call-interactively #'agent-shell-resume-session))
+  (message "Claude billing -> %s. Pick a session (or new)..." label)
+  (agent-shell-anthropic-start-claude-code))
 
 (defun my/claude-use-subscription ()
   "Switch Claude Code to Pro/Max subscription login and resume a session."
