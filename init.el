@@ -1,6 +1,6 @@
 ;;; init.el --- Minimal Clojure/Java config  -*- lexical-binding: t; -*-
 ;;
-;; Author: Tudor
+;; Personal author metadata intentionally omitted for portability/privacy.
 ;; Targets: Emacs 29+ (uses built-in use-package, eglot, treesit-free setup)
 ;; Design goals: small auditable package set, no distro, works in GUI and -nw.
 ;;
