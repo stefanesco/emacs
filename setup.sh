@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Setup script for Tudor's Emacs configuration.
+# Setup script for this Emacs configuration.
 # Installs all external tools that init.el expects on PATH.
 # Safe to re-run: skips anything already installed.
 #
